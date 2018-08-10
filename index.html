@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+    <link rel="stylesheet" href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css">
+    <link rel="stylesheet" href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css">
+
+    <style>
+        body { margin: 0; }
+        .organization__container { margin: 5rem auto 0; max-width: 666px; text-align: center; }
+        .repositories__container { margin-top: 5rem; flex-flow: wrap; }
+        .repositories__container .repository { word-wrap: break-word; margin-bottom: 2rem; }
+        .repositories__container .repository .repository__description { margin-bottom: 2rem; overflow: hidden; text-overflow: ellipsis; height: 3.2em; /* 2x line-height */ }
+        .repositories__container .repository .repository__description.missing { font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="organization__container">
+        <h1 class="organization__title"></h1>
+        <p class="organization__description"></p>
+    </div>
+
+    <div class="container">
+        <div class="row repositories__container">
+        </div>
+    </div>
+
+    <script>
+      (function () {
+        const repositoriesContainer = document.querySelector('.repositories__container')
+        const organizationTitle = document.querySelector('.organization__title')
+        const organizationDescription = document.querySelector('.organization__description')
+
+        const origin = window.location.origin
+        const organizationMatch = origin.match(/\/\/(.*)\.github.io/)
+        if (!organizationMatch) {
+          document.body.innerHTML = 'Invalid GitHub Organization Page'
+          return
+        }
+
+        const organization = organizationMatch[1]
+
+        fetch(`https://api.github.com/orgs/${organization}`)
+          .then((res) => res.json())
+          .then((res) => {
+            document.title = res.name
+
+            organizationTitle.innerHTML = res.name
+            organizationDescription.innerHTML = res.description
+          })
+
+        fetch(`https://api.github.com/orgs/${organization}/repos`)
+          .then((res) => res.json())
+          .then((res) => {
+            let repos = res.map((el) => ({
+              name: el.name,
+              description: el.description,
+              url: el.html_url
+            }))
+
+            repos.forEach((repo) => {
+              let repoEl = document.createElement('div')
+              repoEl.className = 'column column-33 repository'
+
+              let nameEl = document.createElement('h3')
+              nameEl.className = 'repository__name'
+              nameEl.innerHTML = repo.name
+              repoEl.appendChild(nameEl)
+
+              let descriptionEl = document.createElement('p')
+              descriptionEl.className = 'repository__description' + (!repo.description ? ' missing' : '')
+              descriptionEl.innerHTML = repo.description || 'No description'
+              repoEl.appendChild(descriptionEl)
+
+              let buttonEl = document.createElement('a')
+              buttonEl.className = 'button repository__nav-button'
+              buttonEl.setAttribute('href', repo.url)
+              buttonEl.setAttribute('target', '_blank')
+              buttonEl.innerHTML = 'Visit'
+              repoEl.appendChild(buttonEl)
+
+              repositoriesContainer.appendChild(repoEl)
+            })
+          })
+      })()
+    </script>
+</body>
+</html>
+
